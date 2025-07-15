@@ -21,7 +21,7 @@ function Cabins() {
           اضافه کردن کابین
         </Button>
 
-        {showForm && <CreateCabinForm />}
+        {showForm && <CreateCabinForm setShowForm={setShowForm} />}
       </Row>
     </>
   );

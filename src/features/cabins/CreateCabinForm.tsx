@@ -1,86 +1,173 @@
-import styled from "styled-components";
+import { useForm } from "react-hook-form";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import toast from "react-hot-toast";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Form from "../../ui/Form";
 import Textarea from "../../ui/Textarea";
 import FileInput from "../../ui/FileInput";
 
-const FormRow = styled.div`
-  display: grid;
-  align-items: center;
-  grid-template-columns: 24rem 1fr 1.2fr;
-  gap: 2.4rem;
+import { createCabin, editCabin } from "../../services/apiCabins";
+import type { CabinFormInputs } from "../../types/cabin/cabinForm";
+import FormRow from "../../ui/FormRow";
+import type { CabinType } from "../../types/cabin/cabinFromServer";
 
-  padding: 1.2rem 0;
+type CreateCabinFormProps = {
+  setShowForm: React.Dispatch<React.SetStateAction<boolean>>;
+  editingCabinInfo: CabinType | null;
+};
 
-  &:first-child {
-    padding-top: 0;
+function CreateCabinForm({
+  setShowForm,
+  editingCabinInfo = null,
+}: CreateCabinFormProps) {
+  const queryClient = useQueryClient();
+
+  const { register, handleSubmit, reset, formState } = useForm<CabinFormInputs>(
+    {
+      defaultValues: editingCabinInfo
+        ? {
+            name: editingCabinInfo.name,
+            maxCapacity: editingCabinInfo.maxCapacity,
+            regularPrice: editingCabinInfo.regularPrice,
+            discount: editingCabinInfo.discount,
+            description: editingCabinInfo.description,
+            image: undefined,
+          }
+        : {},
+    }
+  );
+  const { errors } = formState;
+
+  const { mutate, isPending: isWorking } = useMutation({
+    mutationFn: editingCabinInfo
+      ? (data: CabinFormInputs) => editCabin(data, editingCabinInfo.id)
+      : createCabin,
+    onSuccess: (res) => {
+      if (res.error || !res.data) {
+        toast.error(res.error || "کابین ایجاد نشد");
+      } else if (res.data) {
+        toast.success(
+          editingCabinInfo
+            ? "کابین با موفقیت ویرایش شد."
+            : "کابین با موفقیت ایجاد شد."
+        );
+        queryClient.invalidateQueries({
+          queryKey: ["cabins"],
+        });
+        reset();
+      }
+    },
+  });
+
+  function onSubmit(newCabin: CabinFormInputs): void {
+    mutate(newCabin);
   }
 
-  &:last-child {
-    padding-bottom: 0;
-  }
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--color-grey-100);
-  }
-
-  &:has(button) {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1.2rem;
-  }
-`;
-
-const Label = styled.label`
-  font-weight: 500;
-`;
-
-// const Error = styled.span`
-//   font-size: 1.4rem;
-//   color: var(--color-red-700);
-// `;
-
-function CreateCabinForm() {
   return (
-    <Form>
-      <FormRow>
-        <Label htmlFor="name">نام کابین</Label>
-        <Input type="text" id="name" />
+    <Form onSubmit={handleSubmit(onSubmit)}>
+      <FormRow id="name" label="نام کابین" error={errors?.name?.message}>
+        <Input
+          type="text"
+          id="name"
+          {...register("name", {
+            required: "پر کردن این فیلد اجباری است.",
+          })}
+          disabled={isWorking}
+        />
       </FormRow>
 
-      <FormRow>
-        <Label htmlFor="maxCapacity">حداکثر ظرفیت</Label>
-        <Input type="number" id="maxCapacity" />
+      <FormRow
+        id="maxCapacity"
+        label="حداکثر ظرفیت"
+        error={errors?.maxCapacity?.message}
+      >
+        <Input
+          type="number"
+          id="maxCapacity"
+          {...register("maxCapacity", {
+            required: "پر کردن این فیلد اجباری است.",
+            min: {
+              value: 1,
+              message: "ظرفیت حداقل باید 1 باشد",
+            },
+          })}
+          disabled={isWorking}
+        />
       </FormRow>
 
-      <FormRow>
-        <Label htmlFor="regularPrice">قیمت عادی</Label>
-        <Input type="number" id="regularPrice" />
+      <FormRow
+        id="regularPrice"
+        label="قیمت عادی"
+        error={errors?.regularPrice?.message}
+      >
+        <Input
+          type="number"
+          id="regularPrice"
+          {...register("regularPrice", {
+            required: "پر کردن این فیلد اجباری است.",
+            min: {
+              value: 1,
+              message: "قیمت حداقل باید 1 باشد",
+            },
+          })}
+          disabled={isWorking}
+        />
       </FormRow>
 
-      <FormRow>
-        <Label htmlFor="discount">تخفیف</Label>
-        <Input type="number" id="discount" defaultValue={0} />
+      <FormRow id="discount" label="تخفیف" error={errors?.discount?.message}>
+        <Input
+          type="number"
+          id="discount"
+          defaultValue={0}
+          {...register("discount", {
+            required: "پر کردن این فیلد اجباری است.",
+            validate: (value, formValues) =>
+              value <= formValues.regularPrice ||
+              "مبلغ تخفیف داده شده نمیتواند از قیمت بیشتر باشد.",
+          })}
+          disabled={isWorking}
+        />
       </FormRow>
 
-      <FormRow>
-        <Label htmlFor="description">توضیحات برای وب‌سایت</Label>
-        <Textarea id="description" defaultValue="" />
+      <FormRow
+        id="description"
+        label="توضیحات برای وب‌سایت"
+        error={errors?.description?.message}
+      >
+        <Textarea
+          id="description"
+          defaultValue=""
+          {...register("description", {
+            required: "پر کردن این فیلد اجباری است.",
+          })}
+          disabled={isWorking}
+        />{" "}
       </FormRow>
 
-      <FormRow>
-        <Label htmlFor="image">عکس کابین</Label>
-        <FileInput id="image" accept="image/*" />
+      <FormRow id="image" label="عکس کابین" error={errors?.image?.message}>
+        <FileInput
+          id="image"
+          accept="image/*"
+          {...register("image", {
+            required: editingCabinInfo ? false : "پر کردن این فیلد اجباری است.",
+          })}
+          disabled={isWorking}
+        />
       </FormRow>
 
       <FormRow>
         {/* type is an HTML attribute! */}
-        <Button $variation="secondary" type="reset">
+        <Button
+          $variation="secondary"
+          type="reset"
+          onClick={() => setShowForm((cur) => !cur)}
+          disabled={isWorking}
+        >
           انصراف
         </Button>
-        <Button>ویرایش کابین</Button>
+        <Button>{editingCabinInfo ? "ویرایش" : "افزودن"} کابین</Button>
       </FormRow>
     </Form>
   );

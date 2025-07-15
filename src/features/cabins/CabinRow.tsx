@@ -1,9 +1,12 @@
 import styled from "styled-components";
-import type { CabinType } from "../../types/cabin";
+import type { CabinType } from "../../types/cabin/cabinFromServer";
 import { toPersianDigits, toPersianPrice } from "../../utils/toPersianNumbers";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteCabin } from "../../services/apiCabins";
 import toast from "react-hot-toast";
+import { useState } from "react";
+import Row from "../../ui/Row";
+import CreateCabinForm from "./CreateCabinForm";
 
 const TableRow = styled.div`
   display: grid;
@@ -25,6 +28,8 @@ const Img = styled.img`
   object-fit: cover;
   object-position: center;
   transform: scale(1.5) translateX(-7px);
+
+  border-radius: var(--border-radius-tiny);
 `;
 
 const Cabin = styled.div`
@@ -61,6 +66,8 @@ type CabinRowProps = {
 };
 
 function CabinRow(props: CabinRowProps) {
+  const [showForm, setShowForm] = useState<boolean>(false);
+
   const {
     id: cabinId,
     image,
@@ -82,16 +89,27 @@ function CabinRow(props: CabinRowProps) {
   });
 
   return (
-    <TableRow role="row" aria-disabled={isDeleting}>
-      <Img src={image} />
-      <Cabin>{cabinName}</Cabin>
-      <div>{toPersianDigits(capacity)} نفر</div>
-      <Price>{toPersianPrice(price)} تومان</Price>
-      <Discount>{toPersianDigits(discount)}</Discount>
-      <Button onClick={() => mutate(cabinId)} disabled={isDeleting}>
-        حذف
-      </Button>
-    </TableRow>
+    <>
+      <TableRow role="row" aria-disabled={isDeleting}>
+        <Img src={image} />
+        <Cabin>{cabinName}</Cabin>
+        <div>{toPersianDigits(capacity)} نفر</div>
+        <Price>{toPersianPrice(price)} تومان</Price>
+        <Discount>{toPersianDigits(discount)}</Discount>
+        <Row $type="horizontal">
+          <Button onClick={() => setShowForm((cur) => !cur)}>ویرایش</Button>
+          <Button onClick={() => mutate(cabinId)} disabled={isDeleting}>
+            حذف
+          </Button>
+        </Row>
+      </TableRow>
+      {showForm && (
+        <CreateCabinForm
+          setShowForm={setShowForm}
+          editingCabinInfo={props.cabin}
+        />
+      )}
+    </>
   );
 }
 
