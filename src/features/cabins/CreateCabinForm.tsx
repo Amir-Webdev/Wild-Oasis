@@ -1,17 +1,16 @@
 import { useForm } from "react-hook-form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import toast from "react-hot-toast";
 import Input from "../../ui/Input";
 import Button from "../../ui/Button";
 import Form from "../../ui/Form";
 import Textarea from "../../ui/Textarea";
 import FileInput from "../../ui/FileInput";
 
-import { createCabin, editCabin } from "../../services/apiCabins";
 import type { CabinFormInputs } from "../../types/cabin/cabinForm";
 import FormRow from "../../ui/FormRow";
 import type { CabinType } from "../../types/cabin/cabinFromServer";
+import { useCreateCabin } from "./useCreateCabin";
+import { useEditCabin } from "./useEditCabin";
 
 type CreateCabinFormProps = {
   setShowForm: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,47 +21,40 @@ function CreateCabinForm({
   setShowForm,
   editingCabinInfo = null,
 }: CreateCabinFormProps) {
-  const queryClient = useQueryClient();
-
-  const { register, handleSubmit, reset, formState } = useForm<CabinFormInputs>(
-    {
-      defaultValues: editingCabinInfo
-        ? {
-            name: editingCabinInfo.name,
-            maxCapacity: editingCabinInfo.maxCapacity,
-            regularPrice: editingCabinInfo.regularPrice,
-            discount: editingCabinInfo.discount,
-            description: editingCabinInfo.description,
-            image: undefined,
-          }
-        : {},
-    }
-  );
-  const { errors } = formState;
-
-  const { mutate, isPending: isWorking } = useMutation({
-    mutationFn: editingCabinInfo
-      ? (data: CabinFormInputs) => editCabin(data, editingCabinInfo.id)
-      : createCabin,
-    onSuccess: (res) => {
-      if (res.error || !res.data) {
-        toast.error(res.error || "کابین ایجاد نشد");
-      } else if (res.data) {
-        toast.success(
-          editingCabinInfo
-            ? "کابین با موفقیت ویرایش شد."
-            : "کابین با موفقیت ایجاد شد."
-        );
-        queryClient.invalidateQueries({
-          queryKey: ["cabins"],
-        });
-        reset();
-      }
-    },
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<CabinFormInputs>({
+    defaultValues: editingCabinInfo
+      ? {
+          name: editingCabinInfo.name,
+          maxCapacity: editingCabinInfo.maxCapacity,
+          regularPrice: editingCabinInfo.regularPrice,
+          discount: editingCabinInfo.discount,
+          description: editingCabinInfo.description,
+          image: undefined,
+        }
+      : {},
   });
+  const regularPrice = watch("regularPrice");
 
-  function onSubmit(newCabin: CabinFormInputs): void {
-    mutate(newCabin);
+  const { createCabin, isCreating } = useCreateCabin();
+  const { editCabin, isEditing } = useEditCabin();
+
+  const editSession = Boolean(editingCabinInfo);
+
+  const isWorking = isCreating || isEditing;
+
+  function onSubmit(cabinInfo: CabinFormInputs): void {
+    if (editSession)
+      editCabin(
+        { ...cabinInfo, cabinId: editingCabinInfo!.id },
+        { onSuccess: () => reset() }
+      );
+    else createCabin({ ...cabinInfo }, { onSuccess: () => reset() });
   }
 
   return (
@@ -123,8 +115,8 @@ function CreateCabinForm({
           defaultValue={0}
           {...register("discount", {
             required: "پر کردن این فیلد اجباری است.",
-            validate: (value, formValues) =>
-              value <= formValues.regularPrice ||
+            validate: (value) =>
+              Number(value) < Number(regularPrice) ||
               "مبلغ تخفیف داده شده نمیتواند از قیمت بیشتر باشد.",
           })}
           disabled={isWorking}

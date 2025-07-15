@@ -1,12 +1,10 @@
 import styled from "styled-components";
 import type { CabinType } from "../../types/cabin/cabinFromServer";
 import { toPersianDigits, toPersianPrice } from "../../utils/toPersianNumbers";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteCabin } from "../../services/apiCabins";
-import toast from "react-hot-toast";
 import { useState } from "react";
 import Row from "../../ui/Row";
 import CreateCabinForm from "./CreateCabinForm";
+import { useDeleteCabin } from "./useDeleteCabin";
 
 const TableRow = styled.div`
   display: grid;
@@ -67,6 +65,7 @@ type CabinRowProps = {
 
 function CabinRow(props: CabinRowProps) {
   const [showForm, setShowForm] = useState<boolean>(false);
+  const { deleteCabin, isDeleting } = useDeleteCabin();
 
   const {
     id: cabinId,
@@ -77,17 +76,6 @@ function CabinRow(props: CabinRowProps) {
     discount,
   } = props.cabin;
 
-  const queryClient = useQueryClient();
-
-  const { mutate, isPending: isDeleting } = useMutation<void, Error, number>({
-    mutationFn: deleteCabin,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cabins"] });
-      toast.success("کابین با موفقیت حذف شد.");
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
   return (
     <>
       <TableRow role="row" aria-disabled={isDeleting}>
@@ -95,10 +83,14 @@ function CabinRow(props: CabinRowProps) {
         <Cabin>{cabinName}</Cabin>
         <div>{toPersianDigits(capacity)} نفر</div>
         <Price>{toPersianPrice(price)} تومان</Price>
-        <Discount>{toPersianDigits(discount)}</Discount>
+        {discount ? (
+          <Discount>{toPersianDigits(discount)}</Discount>
+        ) : (
+          <span>&mdash;</span>
+        )}
         <Row $type="horizontal">
           <Button onClick={() => setShowForm((cur) => !cur)}>ویرایش</Button>
-          <Button onClick={() => mutate(cabinId)} disabled={isDeleting}>
+          <Button onClick={() => deleteCabin(cabinId)} disabled={isDeleting}>
             حذف
           </Button>
         </Row>
