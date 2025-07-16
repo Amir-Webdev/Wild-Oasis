@@ -5,6 +5,12 @@ import { useState } from "react";
 import Row from "../../ui/Row";
 import CreateCabinForm from "./CreateCabinForm";
 import { useDeleteCabin } from "./useDeleteCabin";
+import {
+  HiOutlineSquare2Stack,
+  HiOutlinePencil,
+  HiOutlineTrash,
+} from "react-icons/hi2";
+import { useCreateCabin } from "./useCreateCabin";
 
 const TableRow = styled.div`
   display: grid;
@@ -66,15 +72,29 @@ type CabinRowProps = {
 function CabinRow(props: CabinRowProps) {
   const [showForm, setShowForm] = useState<boolean>(false);
   const { deleteCabin, isDeleting } = useDeleteCabin();
+  const { createCabin: duplicateCabin, isCreating: isDuplicating } =
+    useCreateCabin();
 
   const {
     id: cabinId,
-    image,
     name: cabinName,
     maxCapacity: capacity,
     regularPrice: price,
     discount,
+    description,
+    image,
   } = props.cabin;
+
+  function handleDuplicate() {
+    duplicateCabin({
+      name: `کپی ${cabinName}`,
+      maxCapacity: capacity,
+      regularPrice: price,
+      discount,
+      description,
+      image,
+    });
+  }
 
   return (
     <>
@@ -89,9 +109,14 @@ function CabinRow(props: CabinRowProps) {
           <span>&mdash;</span>
         )}
         <Row $type="horizontal">
-          <Button onClick={() => setShowForm((cur) => !cur)}>ویرایش</Button>
+          <Button onClick={() => setShowForm((cur) => !cur)}>
+            <HiOutlinePencil />
+          </Button>
           <Button onClick={() => deleteCabin(cabinId)} disabled={isDeleting}>
-            حذف
+            <HiOutlineTrash />
+          </Button>
+          <Button onClick={handleDuplicate} disabled={isDuplicating}>
+            <HiOutlineSquare2Stack />
           </Button>
         </Row>
       </TableRow>

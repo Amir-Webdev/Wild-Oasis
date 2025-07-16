@@ -17,8 +17,14 @@ export async function createCabin(
   }
 
   // Replace all slashes with empty string. Supabase makes new folders coresponding to slashes
-  const imageName = `${Date.now()}.${newCabin.image[0].type.split("/")[1]}`;
-  const imagePath = `${supabaseUrl}/storage/v1/object/public/cabin-images//${imageName}`;
+  let imageName;
+  if (typeof newCabin.image !== "string") {
+    imageName = `${Date.now()}.${newCabin.image[0].type!.split("/")[1]}`;
+  }
+  const imagePath =
+    typeof newCabin.image === "string"
+      ? newCabin.image
+      : `${supabaseUrl}/storage/v1/object/public/cabin-images//${imageName}`;
 
   try {
     const { data: cabinData, error: cabinError } = await supabase
@@ -32,13 +38,15 @@ export async function createCabin(
       return { data: null, error: "کابین ایجاد نشد." };
     }
 
-    const { error: storageError } = await supabase.storage
-      .from("cabin-images")
-      .upload(imageName, newCabin.image[0]);
+    if (typeof newCabin.image !== "string") {
+      const { error: storageError } = await supabase.storage
+        .from("cabin-images")
+        .upload(imageName!, newCabin.image[0]);
 
-    if (storageError) {
-      await supabase.from("cabins").delete().eq("id", cabinData.id);
-      return { data: null, error: "عکس ارسال نشد." };
+      if (storageError) {
+        await supabase.from("cabins").delete().eq("id", cabinData.id);
+        return { data: null, error: "عکس ارسال نشد." };
+      }
     }
 
     try {
@@ -65,14 +73,21 @@ export async function editCabin(
 
   const providedImg = editedCabin.image && editedCabin.image.length > 0;
 
-  if (providedImg) {
+  if (providedImg && typeof editedCabin.image !== "string") {
     imageName = `${Date.now()}.${editedCabin.image[0].type.split("/")[1]}`;
     imagePath = `${supabaseUrl}/storage/v1/object/public/cabin-images//${imageName}`;
   }
 
   try {
     const query = supabase.from("cabins");
-    const { image, ...newEditedCabin } = editedCabin;
+
+    const newEditedCabin = {
+      name: editedCabin.name,
+      maxCapacity: editedCabin.maxCapacity,
+      regularPrice: editedCabin.regularPrice,
+      discount: editedCabin.discount,
+      description: editedCabin.description,
+    };
 
     if (providedImg) {
       await query
