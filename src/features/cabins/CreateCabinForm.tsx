@@ -13,12 +13,12 @@ import { useCreateCabin } from "./useCreateCabin";
 import { useEditCabin } from "./useEditCabin";
 
 type CreateCabinFormProps = {
-  setShowForm: React.Dispatch<React.SetStateAction<boolean>>;
+  onClose?: () => void;
   editingCabinInfo?: CabinType | null;
 };
 
 function CreateCabinForm({
-  setShowForm,
+  onClose,
   editingCabinInfo = null,
 }: CreateCabinFormProps) {
   const {
@@ -52,13 +52,30 @@ function CreateCabinForm({
     if (editSession)
       editCabin(
         { ...cabinInfo, cabinId: editingCabinInfo!.id },
-        { onSuccess: () => reset() }
+        {
+          onSuccess: () => {
+            reset();
+            onClose?.();
+          },
+        }
       );
-    else createCabin({ ...cabinInfo }, { onSuccess: () => reset() });
+    else
+      createCabin(
+        { ...cabinInfo },
+        {
+          onSuccess: () => {
+            reset();
+            onClose?.();
+          },
+        }
+      );
   }
 
   return (
-    <Form onSubmit={handleSubmit(onSubmit)}>
+    <Form
+      onSubmit={handleSubmit(onSubmit)}
+      $type={onClose ? "modal" : "regular"}
+    >
       <FormRow id="name" label="نام کابین" error={errors?.name?.message}>
         <Input
           type="text"
@@ -154,7 +171,7 @@ function CreateCabinForm({
         <Button
           $variation="secondary"
           type="reset"
-          onClick={() => setShowForm((cur) => !cur)}
+          onClick={() => onClose?.()}
           disabled={isWorking}
         >
           انصراف

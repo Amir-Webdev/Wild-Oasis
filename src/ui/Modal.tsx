@@ -1,3 +1,6 @@
+import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { HiOutlineXMark } from "react-icons/hi2";
 import styled from "styled-components";
 
 const StyledModal = styled.div`
@@ -29,11 +32,11 @@ const Button = styled.button`
   border: none;
   padding: 0.4rem;
   border-radius: var(--border-radius-sm);
-  transform: translateX(0.8rem);
+  transform: translateX(-0.8rem);
   transition: all 0.2s;
   position: absolute;
-  top: 1.2rem;
-  right: 1.9rem;
+  top: 1rem;
+  left: 1.8rem;
 
   &:hover {
     background-color: var(--color-grey-100);
@@ -49,8 +52,24 @@ const Button = styled.button`
   }
 `;
 
-function Modal() {
-  return <StyledModal>Modal</StyledModal>;
+type ModalProps = {
+  children: ReactNode;
+  onClose: () => void;
+};
+
+function Modal({ children, onClose }: ModalProps) {
+  return createPortal(
+    <Overlay>
+      <StyledModal>
+        <Button onClick={onClose}>
+          <HiOutlineXMark />
+        </Button>
+
+        <div>{children}</div>
+      </StyledModal>
+    </Overlay>,
+    document.body
+  );
 }
 
 export default Modal;
