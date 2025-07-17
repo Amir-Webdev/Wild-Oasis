@@ -12,19 +12,7 @@ import {
 import { useCreateCabin } from "./useCreateCabin";
 import Modal from "../../ui/Modal";
 import ConfirmDelete from "../../ui/ConfirmDelete";
-
-const TableRow = styled.div`
-  display: grid;
-  grid-template-columns: 0.6fr 1.8fr 2.2fr 1fr 1fr 1fr;
-  column-gap: 2.4rem;
-  align-items: center;
-  justify-items: center;
-  padding: 1.4rem 2.4rem;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--color-grey-100);
-  }
-`;
+import Table from "../../ui/Table";
 
 const Img = styled.img`
   display: block;
@@ -98,7 +86,7 @@ function CabinRow(props: CabinRowProps) {
 
   return (
     <>
-      <TableRow role="row" aria-disabled={isDeleting}>
+      <Table.Row aria-disabled={isDeleting}>
         <Img src={image} />
         <Cabin>{cabinName}</Cabin>
         <div>{toPersianDigits(capacity)} نفر</div>
@@ -137,7 +125,7 @@ function CabinRow(props: CabinRowProps) {
             <HiOutlineSquare2Stack />
           </Button>
         </Row>
-      </TableRow>
+      </Table.Row>
     </>
   );
 }
