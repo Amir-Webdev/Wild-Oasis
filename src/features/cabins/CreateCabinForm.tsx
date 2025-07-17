@@ -14,7 +14,7 @@ import { useEditCabin } from "./useEditCabin";
 
 type CreateCabinFormProps = {
   setShowForm: React.Dispatch<React.SetStateAction<boolean>>;
-  editingCabinInfo: CabinType | null;
+  editingCabinInfo?: CabinType | null;
 };
 
 function CreateCabinForm({
