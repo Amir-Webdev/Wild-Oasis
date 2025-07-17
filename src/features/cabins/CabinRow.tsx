@@ -1,7 +1,6 @@
 import styled from "styled-components";
 import type { CabinType } from "../../types/cabin/cabinFromServer";
 import { toPersianDigits, toPersianPrice } from "../../utils/toPersianNumbers";
-import { useState } from "react";
 import Row from "../../ui/Row";
 import CreateCabinForm from "./CreateCabinForm";
 import { useDeleteCabin } from "./useDeleteCabin";
@@ -11,6 +10,8 @@ import {
   HiOutlineTrash,
 } from "react-icons/hi2";
 import { useCreateCabin } from "./useCreateCabin";
+import Modal from "../../ui/Modal";
+import ConfirmDelete from "../../ui/ConfirmDelete";
 
 const TableRow = styled.div`
   display: grid;
@@ -70,7 +71,6 @@ type CabinRowProps = {
 };
 
 function CabinRow(props: CabinRowProps) {
-  const [showForm, setShowForm] = useState<boolean>(false);
   const { deleteCabin, isDeleting } = useDeleteCabin();
   const { createCabin: duplicateCabin, isCreating: isDuplicating } =
     useCreateCabin();
@@ -109,23 +109,35 @@ function CabinRow(props: CabinRowProps) {
           <span>&mdash;</span>
         )}
         <Row $type="horizontal">
-          <Button onClick={() => setShowForm((cur) => !cur)}>
-            <HiOutlinePencil />
-          </Button>
-          <Button onClick={() => deleteCabin(cabinId)} disabled={isDeleting}>
-            <HiOutlineTrash />
-          </Button>
+          <Modal>
+            <Modal.Open opens="editCabinForm">
+              <Button>
+                <HiOutlinePencil />
+              </Button>
+            </Modal.Open>
+            <Modal.Window name="editCabinForm">
+              <CreateCabinForm editingCabinInfo={props.cabin} />
+            </Modal.Window>
+
+            <Modal.Open opens="confirmDelete">
+              <Button disabled={isDeleting}>
+                <HiOutlineTrash />
+              </Button>
+            </Modal.Open>
+            <Modal.Window name="confirmDelete">
+              <ConfirmDelete
+                onConfirm={() => deleteCabin(cabinId)}
+                resourceName={`کابین ${cabinName}`}
+                disabled={isDeleting}
+              />
+            </Modal.Window>
+          </Modal>
+
           <Button onClick={handleDuplicate} disabled={isDuplicating}>
             <HiOutlineSquare2Stack />
           </Button>
         </Row>
       </TableRow>
-      {showForm && (
-        <CreateCabinForm
-          setShowForm={setShowForm}
-          editingCabinInfo={props.cabin}
-        />
-      )}
     </>
   );
 }

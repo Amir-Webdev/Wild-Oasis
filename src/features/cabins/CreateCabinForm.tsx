@@ -14,13 +14,10 @@ import { useEditCabin } from "./useEditCabin";
 
 type CreateCabinFormProps = {
   onClose?: () => void;
-  editingCabinInfo?: CabinType | null;
+  editingCabinInfo?: CabinType;
 };
 
-function CreateCabinForm({
-  onClose,
-  editingCabinInfo = null,
-}: CreateCabinFormProps) {
+function CreateCabinForm({ onClose, editingCabinInfo }: CreateCabinFormProps) {
   const {
     register,
     handleSubmit,
